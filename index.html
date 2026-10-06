@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kanal Entegrasyon Paneli — Kavramsal Önizleme</title>
+<style>
+  :root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --good: #006300;
+    --series-trendyol: #2a78d6;
+    --series-hepsiburada: #eb6834;
+    --series-woo: #1baf7a;
+    --status-warning: #fab219;
+    --status-critical: #d03b3b;
+    --card-radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  .topbar { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .topbar h1 { font-size: 21px; font-weight: 700; margin: 0; }
+  .topbar .tag { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .subtitle { font-size: 13.5px; color: var(--ink-2); margin: 4px 0 20px; }
+
+  .filters { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-bottom: 22px; }
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface-1); font-size: 12.5px; font-weight: 600; color: var(--ink-2);
+    cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .chip.active .dot { outline: 2px solid rgba(255,255,255,0.6); }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
+    padding: 16px 18px;
+  }
+  .tile .label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.01em; }
+  .tile .value { font-size: 25px; font-weight: 700; margin-top: 6px; }
+  .tile .delta { font-size: 12px; margin-top: 5px; font-weight: 600; }
+  .tile .delta.up { color: var(--good); }
+  .tile .delta.down { color: var(--status-critical); }
+
+  .charts { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .charts { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--card-radius);
+    padding: 18px 20px 16px;
+  }
+  .card h3 { font-size: 14px; margin: 0 0 2px; font-weight: 700; }
+  .card .card-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .legend { display: flex; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+  .legend .item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+  .legend .sw { width: 9px; height: 9px; border-radius: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 8px 10px; border-bottom: 1px solid var(--grid); }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--grid); color: var(--ink); }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .badge.trendyol { background: rgba(42,120,214,0.10); color: #1c5cab; }
+  .badge.hepsiburada { background: rgba(235,104,52,0.10); color: #b8471f; }
+  .badge.woo { background: rgba(27,175,122,0.10); color: #147f57; }
+  .profit-pos { color: var(--good); font-weight: 700; }
+  .profit-neg { color: var(--status-critical); font-weight: 700; }
+
+  .bottom-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+  .stock-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--grid); }
+  .stock-item:last-child { border-bottom: none; }
+  .stock-name { font-size: 13px; font-weight: 600; }
+  .stock-chan { font-size: 11.5px; color: var(--muted); }
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+  .status-pill.critical { background: rgba(208,59,59,0.10); color: #a92e2e; }
+  .status-pill.warning { background: rgba(250,178,25,0.16); color: #93650a; }
+  .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  footer { margin-top: 26px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  #lineTooltip {
+    position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 11.5px;
+    padding: 6px 9px; border-radius: 8px; transform: translate(-50%, -120%); opacity: 0; transition: opacity 0.1s;
+    white-space: nowrap; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>Kanal Entegrasyon Paneli</h1>
+    <span class="tag">Kavramsal Önizleme</span>
+  </div>
+  <div class="subtitle">Trendyol, Hepsiburada ve WooCommerce siparişleri, stok ve kâr/zarar tek ekranda birleştirilir.</div>
+
+  <div class="filters">
+    <div class="filter-group" id="dateFilters">
+      <button class="chip active" data-range="7">Son 7 Gün</button>
+      <button class="chip" data-range="14">Son 14 Gün</button>
+      <button class="chip" data-range="30">Son 30 Gün</button>
+    </div>
+    <div class="filter-group" id="channelFilters">
+      <button class="chip active" data-chan="all"><span class="dot" style="background:var(--ink)"></span>Tümü</button>
+      <button class="chip" data-chan="trendyol"><span class="dot" style="background:var(--series-trendyol)"></span>Trendyol</button>
+      <button class="chip" data-chan="hepsiburada"><span class="dot" style="background:var(--series-hepsiburada)"></span>Hepsiburada</button>
+      <button class="chip" data-chan="woo"><span class="dot" style="background:var(--series-woo)"></span>WooCommerce</button>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="charts">
+    <div class="card">
+      <h3>Net Kâr Trendi</h3>
+      <div class="card-sub">Seçili tarih aralığı, günlük net kâr (TL)</div>
+      <div style="position:relative;">
+        <svg id="lineChart" viewBox="0 0 600 200" style="width:100%; height:200px; overflow:visible;"></svg>
+        <div id="lineTooltip"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Kanal Bazlı Sipariş Sayısı</h3>
+      <div class="card-sub">Seçili tarih aralığında kanal dağılımı</div>
+      <svg id="barChart" viewBox="0 0 340 200" style="width:100%; height:200px;"></svg>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="card">
+      <h3>Son Siparişler</h3>
+      <div class="card-sub">Tüm kanallardan gelen en güncel siparişler</div>
+      <table>
+        <thead>
+          <tr><th>Kanal</th><th>Ürün</th><th class="num">Tutar</th><th class="num">Maliyet</th><th class="num">Kâr</th><th>Tarih</th></tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Kritik Stok Uyarıları</h3>
+      <div class="card-sub">Tanımlı eşiğin altına düşen ürünler</div>
+      <div id="stockList"></div>
+    </div>
+  </div>
+
+  <footer>Bu panel, örnek/temsili verilerle hazırlanmış kavramsal bir önizlemedir. Gerçek sistem, sizin canlı sipariş ve stok verilerinizle çalışacaktır.</footer>
+</div>
+
+<script>
+  // ---------- deterministic pseudo-random ----------
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rand = mulberry32(20260927);
+
+  const CHANNELS = [
+    { key: 'trendyol', label: 'Trendyol', color: 'var(--series-trendyol)', hex: '#2a78d6' },
+    { key: 'hepsiburada', label: 'Hepsiburada', color: 'var(--series-hepsiburada)', hex: '#eb6834' },
+    { key: 'woo', label: 'WooCommerce', color: 'var(--series-woo)', hex: '#1baf7a' },
+  ];
+  const PRODUCTS = ['Kablosuz Kulaklık', 'Akıllı Bileklik', 'Termos 500ml', 'Sırt Çantası', 'Masaüstü Lamba', 'Bluetooth Hoparlör', 'Güç Bankası', 'Organizer Kutu'];
+
+  // generate 30 days of orders
+  const today = new Date('2026-09-27');
+  const allOrders = [];
+  for (let d = 29; d >= 0; d--) {
+    const date = new Date(today); date.setDate(date.getDate() - d);
+    const count = 2 + Math.floor(rand() * 5);
+    for (let i = 0; i < count; i++) {
+      const chan = CHANNELS[Math.floor(rand() * CHANNELS.length)];
+      const price = 180 + Math.floor(rand() * 620);
+      const cost = Math.floor(price * (0.45 + rand() * 0.25));
+      allOrders.push({
+        date: new Date(date), chan: chan.key,
+        product: PRODUCTS[Math.floor(rand() * PRODUCTS.length)],
+        price, cost, profit: price - cost,
+      });
+    }
+  }
+
+  const stockAlerts = [
+    { name: 'Kablosuz Kulaklık', chan: 'Trendyol', level: 3, status: 'critical' },
+    { name: 'Termos 500ml', chan: 'WooCommerce', level: 6, status: 'warning' },
+    { name: 'Güç Bankası', chan: 'Hepsiburada', level: 4, status: 'critical' },
+    { name: 'Bluetooth Hoparlör', chan: 'Trendyol', level: 8, status: 'warning' },
+  ];
+
+  let activeRange = 7;
+  let activeChan = 'all';
+
+  function fmtTL(n) { return n.toLocaleString('tr-TR') + ' TL'; }
+  function fmtDate(d) { return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }); }
+
+  function filteredOrders() {
+    const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - (activeRange - 1));
+    return allOrders.filter(o => o.date >= cutoff && (activeChan === 'all' || o.chan === activeChan));
+  }
+
+  function render() {
+    const orders = filteredOrders();
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((s,o)=>s+o.price,0);
+    const totalCost = orders.reduce((s,o)=>s+o.cost,0);
+    const totalProfit = totalRevenue - totalCost;
+    const margin = totalRevenue ? Math.round((totalProfit/totalRevenue)*100) : 0;
+
+    document.getElementById('tiles').innerHTML = `
+      <div class="tile"><div class="label">Toplam Sipariş</div><div class="value">${totalOrders}</div><div class="delta up">▲ %8 önceki döneme göre</div></div>
+      <div class="tile"><div class="label">Toplam Ciro</div><div class="value">${fmtTL(totalRevenue)}</div><div class="delta up">▲ %12 önceki döneme göre</div></div>
+      <div class="tile"><div class="label">Toplam Maliyet</div><div class="value">${fmtTL(totalCost)}</div><div class="delta down">▲ %5 önceki döneme göre</div></div>
+      <div class="tile"><div class="label">Net Kâr (Marj %${margin})</div><div class="value">${fmtTL(totalProfit)}</div><div class="delta up">▲ %14 önceki döneme göre</div></div>
+    `;
+
+    renderBar(orders);
+    renderLine(orders);
+    renderTable(orders);
+    renderStock();
+  }
+
+  function renderBar(orders) {
+    const svg = document.getElementById('barChart');
+    const counts = CHANNELS.map(c => orders.filter(o => o.chan === c.key).length);
+    const max = Math.max(1, ...counts);
+    const W = 340, H = 200, padL = 8, padB = 30, padT = 26, barGap = 36;
+    const barW = 40;
+    const chartH = H - padB - padT;
+    let s = `<line x1="${padL}" y1="${H-padB}" x2="${W-8}" y2="${H-padB}" stroke="var(--baseline)" stroke-width="1"/>`;
+    CHANNELS.forEach((c, i) => {
+      const x = padL + 12 + i * (barW + barGap);
+      const h = (counts[i] / max) * chartH;
+      const y = H - padB - h;
+      s += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="${c.hex}" />`;
+      s += `<text x="${x + barW/2}" y="${y - 8}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">${counts[i]}</text>`;
+      s += `<text x="${x + barW/2}" y="${H-10}" text-anchor="middle" font-size="9.5" fill="var(--muted)">${c.label}</text>`;
+    });
+    svg.innerHTML = s;
+  }
+
+  function renderLine(orders) {
+    const svg = document.getElementById('lineChart');
+    const tooltip = document.getElementById('lineTooltip');
+    const days = [];
+    const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - (activeRange - 1));
+    for (let d = new Date(cutoff); d <= today; d.setDate(d.getDate()+1)) days.push(new Date(d));
+    const byDay = days.map(day => {
+      const dayOrders = orders.filter(o => o.date.toDateString() === day.toDateString());
+      return dayOrders.reduce((s,o)=>s+o.profit,0);
+    });
+    const W = 600, H = 200, padL = 8, padR = 8, padB = 24, padT = 16;
+    const max = Math.max(1, ...byDay), min = Math.min(0, ...byDay);
+    const chartW = W - padL - padR, chartH = H - padT - padB;
+    const stepX = days.length > 1 ? chartW / (days.length - 1) : 0;
+    const pts = byDay.map((v,i) => {
+      const x = padL + i * stepX;
+      const y = padT + chartH - ((v - min) / (max - min || 1)) * chartH;
+      return [x,y,v,days[i]];
+    });
+    let path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    let area = path + ` L${pts[pts.length-1][0].toFixed(1)},${padT+chartH} L${pts[0][0].toFixed(1)},${padT+chartH} Z`;
+    let s = `<line x1="${padL}" y1="${padT+chartH}" x2="${W-padR}" y2="${padT+chartH}" stroke="var(--baseline)" stroke-width="1"/>`;
+    s += `<path d="${area}" fill="rgba(42,120,214,0.08)" stroke="none"/>`;
+    s += `<path d="${path}" fill="none" stroke="var(--series-trendyol)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    pts.forEach(p => { s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" fill="var(--series-trendyol)" opacity="0"/>`; });
+    svg.innerHTML = s;
+    svg.dataset.pts = JSON.stringify(pts.map(p=>[p[0],p[1],p[2],p[3].toISOString()]));
+
+    svg.onmousemove = (e) => {
+      const rect = svg.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const data = JSON.parse(svg.dataset.pts);
+      let nearest = data[0], nd = Infinity;
+      data.forEach(p => { const d = Math.abs(p[0]-mx); if (d < nd) { nd = d; nearest = p; } });
+      const px = nearest[0] / scaleX;
+      tooltip.style.opacity = 1;
+      tooltip.style.left = px + 'px';
+      tooltip.style.top = (nearest[1]/scaleX) + 'px';
+      tooltip.textContent = fmtDate(new Date(nearest[3])) + ' · ' + fmtTL(Math.round(nearest[2]));
+    };
+    svg.onmouseleave = () => { tooltip.style.opacity = 0; };
+  }
+
+  function renderTable(orders) {
+    const sorted = [...orders].sort((a,b)=>b.date-a.date).slice(0,8);
+    document.getElementById('ordersBody').innerHTML = sorted.map(o => {
+      const c = CHANNELS.find(c=>c.key===o.chan);
+      return `<tr>
+        <td><span class="badge ${o.chan}"><span class="dot" style="background:${c.hex}"></span>${c.label}</span></td>
+        <td>${o.product}</td>
+        <td class="num">${fmtTL(o.price)}</td>
+        <td class="num">${fmtTL(o.cost)}</td>
+        <td class="num profit-pos">+${fmtTL(o.profit)}</td>
+        <td>${fmtDate(o.date)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderStock() {
+    document.getElementById('stockList').innerHTML = stockAlerts.map(s => `
+      <div class="stock-item">
+        <div>
+          <div class="stock-name">${s.name}</div>
+          <div class="stock-chan">${s.chan} · ${s.level} adet kaldı</div>
+        </div>
+        <span class="status-pill ${s.status}"><span class="dot" style="background:${s.status==='critical'?'var(--status-critical)':'var(--status-warning)'}"></span>${s.status==='critical'?'Kritik':'Uyarı'}</span>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('dateFilters').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip'); if (!btn) return;
+    activeRange = Number(btn.dataset.range);
+    [...document.getElementById('dateFilters').children].forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+  document.getElementById('channelFilters').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chip'); if (!btn) return;
+    activeChan = btn.dataset.chan;
+    [...document.getElementById('channelFilters').children].forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
